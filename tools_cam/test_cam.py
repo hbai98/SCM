@@ -2,10 +2,13 @@
 # TS-CAM
 # Copyright (c) Learning and Machine Perception Lab (LAMP), SECE, University of Chinese Academy of Science.
 # ----------------------------------------------------------------------------------------------------------
+import itertools
 import os
 import sys
 import datetime
 import pprint
+from tkinter import image_names
+from einops import rearrange
 import numpy as np
 
 import _init_paths
@@ -15,8 +18,8 @@ from core.engine import creat_data_loader,\
     AverageMeter, accuracy, list2acc, adjust_learning_rate
 from core.functions import prepare_env
 from utils import mkdir, Logger
-from cams_deit import evaluate_cls_loc
-from typing import Dict, List, Optional, Union, Sequence
+from cams_deit import resize_cam, blend_cam, get_bboxes, cal_iou, draw_bbox
+from typing import Dict, List, Optional, Tuple, Union, Sequence
 from mmcls.core.evaluation import precision_recall_f1, support
 from mmcls.models.losses import accuracy
 from typing import Dict, List, Optional, Union, Sequence
@@ -95,8 +98,8 @@ def main():
     train_loader, val_loader = creat_data_loader(cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
     device, model, cls_criterion = creat_model(cfg, args)
 
-    results = val_loc_one_epoch(val_loader, model, device, cls_criterion, writer, cfg)
-    eval_results = evaluate(results)
+    imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names = val_loc_one_epoch(val_loader, model, device, cls_criterion, writer, cfg)
+    eval_results = evaluate((imgs, cams, gt_labels, cls_logits, gt_bboxes))
     for k, v in eval_results.items():
         if isinstance(v, np.ndarray):
             v = [round(out, 2) for out in v.tolist()]
@@ -105,40 +108,76 @@ def main():
         else:
             raise ValueError(f'Unsupport metric type: {type(v)}')
         print(f'\n{k} : {v}')
-        
-    
-   
+    if cfg.TEST.SAVE_BOXED_IMAGE:
+        opt_thred = eval_results['det_optThred_thr_50.00_top-1']
+        print(f"DRAWING IMAGES AT OPTIMAL THRESHOLD {opt_thred}...")
+        draw_bboxes_images(imgs, cams, gt_labels, gt_bboxes, opt_thred, image_names, cfg)
 
-def draw_bboxes_images(model, val_loader):
-    with torch.no_grad():
-        model.eval()
-        for i, (input, target, bbox, image_names) in enumerate(val_loader):
-            pass
+def draw_bboxes_images(inputs, cams, gt_labels, gt_bboxes, opt_thred, image_names, cfg):
+    for i in tqdm(range(len(inputs))):
+        input= inputs[i]
+        mean = rearrange(np.array(list(map(float, cfg.DATA.IMAGE_MEAN))), 'D -> D 1 1')
+        std = rearrange(np.array(list(map(float, cfg.DATA.IMAGE_STD))), 'D -> D 1 1')
+        img = input*mean+std
+        img = img*255
+        img = img.transpose(1,2,0)
+        cam = cams[i]
+        gt_label = gt_labels[i]
+        gt_bbox = gt_bboxes[i]
+        image_name = image_names[i]
+        cam = cam[gt_label, :, :]
+        cam = resize_cam(cam, size=(cfg.DATA.CROP_SIZE, cfg.DATA.CROP_SIZE))
+        bbox = get_bboxes(cam, cam_thr=opt_thred)
+        blend, heatmap = blend_cam(img, cam, bbox)
+        # Calculate IoU
+        gt_box_cnt = len(gt_bbox)
+        max_iou = 0
+        for i in range(gt_box_cnt):
+            gt_box = gt_bbox[i]
+            iou_i = cal_iou(bbox, gt_box)
+            if iou_i > max_iou:
+                max_iou = iou_i
+
+        iou = max_iou
+        boxed_image = draw_bbox(blend, iou, np.array(gt_bbox).reshape(-1,4).astype(np.int),bbox, draw_box=True, draw_txt=True)
+
+        save_dir = os.path.join(cfg.BASIC.SAVE_DIR, 'boxed_image', image_name.split('/')[0])
+        save_path = os.path.join(cfg.BASIC.SAVE_DIR, 'boxed_image', image_name)
+        mkdir(save_dir)
+        # print(save_path)
+        cv2.imwrite(save_path, boxed_image) 
+                        
 def val_loc_one_epoch(val_loader, model, device, criterion, writer, cfg):
-
     results = []
     with torch.no_grad():
         model.eval()
-        for i, (input, target, bbox, image_names) in enumerate(val_loader):
+        for i, (input, target, bbox, image_names_) in enumerate(val_loader):
             # update iteration steps
-            
             target = target.to(device)
             input = input.to(device)
             
-            cls_logits, cams = model(input, return_cam=True)
-            cls_logits = cls_logits.cpu().tolist()
-            cams = cams.cpu().tolist()
+            cls_logits_, cams_ = model(input, return_cam=True)
+            cls_logits_ = cls_logits_.cpu().tolist()
+            cams_ = cams_.cpu().tolist()
             target = target.cpu().tolist()
+            input = input.cpu().tolist()
             
-            gt_bbox = [bbox[b].strip().split(' ') for b in range(len(cams))]
-            gt_bbox = [np.array(list(map(float, b))) for b in gt_bbox]
+            gt_bbox = [bbox[b].strip().split(' ') for b in range(len(cams_))]
+            gt_bbox = [np.array(list(map(float, b))).reshape(-1, 4) for b in gt_bbox]
+            results.append((input, cams_, target, cls_logits_, gt_bbox, image_names_)) 
+    
+    imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names = zip(*results)
+    cams = np.concatenate(cams)
+    imgs = np.concatenate(imgs)
+    cls_logits = np.concatenate(cls_logits)
+    gt_bboxes = np.concatenate(gt_bboxes)
+    gt_labels = np.concatenate(gt_labels)
+    image_names = list(itertools.chain(*image_names))
 
-            results.extend([(cls_logits, cams, gt_bbox, target)])
-
-    return results
+    return imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names
 
 def evaluate(
-    results: List,
+    results: Tuple,
     metric: Union[str, List[str]] = ["maxbox_acc", "GT-Known", "loc_acc", "cls_acc"],
     metric_options: Optional[dict] = None,
     wsol_cfg=dict(
@@ -178,20 +217,14 @@ def evaluate(
     multi_contour_eval = wsol_cfg['multi_contour_eval']
     iou_threshold_list = wsol_cfg['iou_threshold_list']
     RESHAPE_SIZE = wsol_cfg['RESHAPE_SIZE']
-
-    cls_scores, preds, gt_bboxes, gt_labels = zip(*results)
+    _, preds, gt_labels, cls_scores, gt_bboxes = results
     # remove padding values -1
     # list[B n array(N*4)] where N is the padded length of arraries -> n is the number of cases per batch
     # -> n` is the number of gt_bboxes per case
-    gt_bboxes = [a.reshape(-1, 4) for b in gt_bboxes for a in b]
     # list[(B*n) array(n`*4)]
     # -> [B 4] # for CUB-200-2011 only one box is available for each case
-    cls_scores = np.concatenate(cls_scores)  # [B 200]
-    preds = np.concatenate(preds)  # [B C H W]
-    gt_labels = np.concatenate(gt_labels)
     num_imgs = len(preds)  # B
     
-    print(gt_labels)
     assert len(gt_labels) == num_imgs, \
         f'dataset testing results should be of the same ' \
         f'length as gt_labels'
@@ -653,6 +686,8 @@ def check_box_convention(boxes, convention):
     if (widths < 0).any() or (heights < 0).any():
         raise RuntimeError("Boxes do not follow the {} convention."
                            .format(convention))
+
+
 
 
 if __name__ == "__main__":
