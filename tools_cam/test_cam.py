@@ -98,7 +98,7 @@ def main():
     train_loader, val_loader = creat_data_loader(cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
     device, model, cls_criterion = creat_model(cfg, args)
 
-    imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names = val_loc_one_epoch(val_loader, model, device, cls_criterion, writer, cfg)
+    imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names = val_loc_one_epoch(val_loader, model, device)
     eval_results = evaluate((imgs, cams, gt_labels, cls_logits, gt_bboxes))
     for k, v in eval_results.items():
         if isinstance(v, np.ndarray):
@@ -115,7 +115,7 @@ def main():
 
 def draw_bboxes_images(inputs, cams, gt_labels, gt_bboxes, opt_thred, image_names, cfg):
     for i in tqdm(range(len(inputs))):
-        input= inputs[i]
+        input= np.array(inputs[i])
         mean = rearrange(np.array(list(map(float, cfg.DATA.IMAGE_MEAN))), 'D -> D 1 1')
         std = rearrange(np.array(list(map(float, cfg.DATA.IMAGE_STD))), 'D -> D 1 1')
         img = input*mean+std
@@ -139,7 +139,7 @@ def draw_bboxes_images(inputs, cams, gt_labels, gt_bboxes, opt_thred, image_name
                 max_iou = iou_i
 
         iou = max_iou
-        boxed_image = draw_bbox(blend, iou, np.array(gt_bbox).reshape(-1,4).astype(np.int),bbox, draw_box=True, draw_txt=True)
+        boxed_image = draw_bbox(blend, iou, np.array(gt_bbox).reshape(-1,4).astype(np.int),bbox, draw_box=False, draw_txt=False)
 
         save_dir = os.path.join(cfg.BASIC.SAVE_DIR, 'boxed_image', image_name.split('/')[0])
         save_path = os.path.join(cfg.BASIC.SAVE_DIR, 'boxed_image', image_name)
@@ -147,7 +147,7 @@ def draw_bboxes_images(inputs, cams, gt_labels, gt_bboxes, opt_thred, image_name
         # print(save_path)
         cv2.imwrite(save_path, boxed_image) 
                         
-def val_loc_one_epoch(val_loader, model, device, criterion, writer, cfg):
+def val_loc_one_epoch(val_loader, model, device):
     results = []
     with torch.no_grad():
         model.eval()
@@ -168,11 +168,11 @@ def val_loc_one_epoch(val_loader, model, device, criterion, writer, cfg):
     
     imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names = zip(*results)
     cams = np.concatenate(cams)
-    imgs = np.concatenate(imgs)
     cls_logits = np.concatenate(cls_logits)
     gt_bboxes = np.concatenate(gt_bboxes)
     gt_labels = np.concatenate(gt_labels)
     image_names = list(itertools.chain(*image_names))
+    imgs = list(itertools.chain(*imgs))
 
     return imgs, cams, gt_labels, cls_logits, gt_bboxes, image_names
 
@@ -276,7 +276,7 @@ def evaluate(
             # loc_correct would consider cls results along with det results.
             loc_correct = {iou_threshold: mul.Array(ctypes.c_int64,
                                                     len(topk)*len(cam_threshold_list)) for iou_threshold in iou_threshold_list}
-            pred_labels = np.argmax(cls_scores, axis=1)  # [B]
+            pred_labels = topk_ind  # [B K]
 
         # preds -> [B topk H W] i -> B
         with Pool(mul.cpu_count(), initializer=init, initargs=(det_correct, loc_correct)) as p:
@@ -513,7 +513,7 @@ def process_batch(i,
                 np.where(np.asarray(sliced_multiple_iou)
                             >= (_THRESHOLD/100))[0]
             det_arry[j][correct_threshold_indices] += 1
-            if "loc_acc" in metrics and pred_labels[i] == gt_labels[i]:
+            if "loc_acc" in metrics and pred_labels[i][j] == gt_labels[i]:
                 loc_arry = cnt_loc[_THRESHOLD]
                 loc_arry[j][correct_threshold_indices] += 1
         

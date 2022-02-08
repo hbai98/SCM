@@ -12,7 +12,8 @@ from timm.models.registry import register_model
 
 __all__ = [
     'deit_fcam_tiny_patch16_224', 'deit_fcam_small_patch16_224', 'deit_fcam_base_patch16_224',
-    'deit_tscam_tiny_patch16_224', 'deit_tscam_small_patch16_224', 'deit_tscam_base_patch16_224'
+    'deit_tscam_tiny_patch16_224', 'deit_tscam_small_patch16_224', 'deit_tscam_base_patch16_224',
+    
 ]
 
 def embeddings_to_cosine_similarity_matrix(tokens) :
@@ -31,7 +32,7 @@ def embeddings_to_cosine_similarity_matrix(tokens) :
     return x
 
 class fCAM(VisionTransformer):
-    def __init__(self, num_layers=2, *args, **kwargs):
+    def __init__(self, num_layers=16, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self.head = nn.Linear(self.embed_dim, self.num_classes)
         self.head = nn.Conv2d(self.embed_dim, self.num_classes, kernel_size=3, stride=1, padding=1)
@@ -70,7 +71,7 @@ class fCAM(VisionTransformer):
         x_patch = self.head(x_patch)
         # x_patch = self.head(rearrange(x_patch, 'B D H W -> B H W D'))
         # x_patch = rearrange(x_patch, 'B H W D -> B D H W')
-        pred_box = x_patch
+        # pred_box = x_patch
         
         attn_weights = torch.stack(attn_weights)        # 12 * B * H * N * N
         attn_weights = torch.mean(attn_weights, dim=2)  # 12 * B * N * N
@@ -86,7 +87,7 @@ class fCAM(VisionTransformer):
             x_patch, cams = layer(x_patch, cams)
             
         # x_patch = self.head(x_patch)
-        # pred_box = x_patch
+        pred_box = x_patch
         # pred_cam = rearrange(cams, 'B (H W) -> B 1 H W', H=h)
         x_logits = self.avgpool(x_patch).squeeze(3).squeeze(2)
         
