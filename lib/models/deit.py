@@ -78,7 +78,7 @@ class fCAM(VisionTransformer):
         x_patch = self.head(x_patch)
         # x_patch = self.head(rearrange(x_patch, 'B D H W -> B H W D'))
         # x_patch = rearrange(x_patch, 'B H W D -> B D H W')
-        pred_semantic = x_patch
+        # pred_semantic = x_patch
 
         attn = torch.stack(attn)        # 12 * B * H * N * N
         attn = torch.mean(attn, dim=2)  # 12 * B * N * N
@@ -99,18 +99,21 @@ class fCAM(VisionTransformer):
         cam = rearrange(cams, 'B 1 H W -> B (H W)')
         cam = norm_cam(cam)
 
-        patches = []
-        patches.append(cam)
+        F = []
+        F.append(cam)
+        S = []
+        S.append(x_patch)
         for i, layer in enumerate(self.layers):
             x_patch, cam = layer(x_patch, cam)
-            patches.append(cam)
+            F.append(cam)
+            S.append(x_patch)
         # x_patch = self.head(x_patch)
         # pred_box = x_patch
         # pred_cam = rearrange(cams, 'B (H W) -> B 1 H W', H=h)
         # x_patch = self.convs(patches)
         x_logits = self.avgpool(x_patch).squeeze(3).squeeze(2)
-        pred_cam = rearrange(patches[-1], 'B (H W) -> B 1 H W', H=h)
-
+        pred_cam = rearrange(F[0], 'B (H W) -> B 1 H W', H=h)
+        pred_semantic = S[2]
         
         if self.training:
             return x_logits
