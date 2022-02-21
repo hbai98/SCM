@@ -3,7 +3,6 @@ BASIC:
   SEED: 26
   BACKUP_CODES: True
   BACKUP_LIST: ['lib', 'tools_cam', 'configs']
-
 MODEL:
   ARCH: deit_tscam_base_patch16_224
   CAM_THR: 0.1
@@ -24,7 +23,7 @@ TRAIN:
 TEST:
   BATCH_SIZE: 128
   SAVE_BOXED_IMAGE: False
-
+  
 SOLVER:
   START_LR: 0.001
   LR_STEPS: [30, ]

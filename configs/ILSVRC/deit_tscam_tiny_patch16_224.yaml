@@ -3,7 +3,7 @@ BASIC:
   SEED: 26
   BACKUP_CODES: True
   BACKUP_LIST: ['lib', 'tools_cam', 'configs']
-  NUM_WORKERS: 8
+  NUM_WORKERS: 6
 
 MODEL:
   ARCH: deit_tscam_tiny_patch16_224

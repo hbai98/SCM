@@ -50,7 +50,6 @@ def creat_model(cfg, args):
 
 def main():
     args = update_config()
-
     # create checkpoint directory
     cfg.BASIC.SAVE_DIR = os.path.join(cfg.BASIC.SAVE_ROOT,'ckpt', cfg.DATA.DATASET, '{}_CAM-NORMAL_SEED{}_CAM-THR{}_BS{}_{}'.format(
         cfg.MODEL.ARCH, cfg.BASIC.SEED, cfg.MODEL.CAM_THR, cfg.TRAIN.BATCH_SIZE, cfg.BASIC.TIME))
@@ -66,7 +65,7 @@ def main():
     pprint.pprint(cfg)
     writer = SummaryWriter(log_dir)
 
-    train_loader, val_loader = creat_data_loader(cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
+    train_loader, test_loader, val_loader = creat_data_loader(cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
     device, model, optimizer, cls_criterion = creat_model(cfg, args)
 
     best_gtknown = 0
@@ -78,17 +77,10 @@ def main():
         update_train_step, loss_train, cls_top1_train, cls_top5_train = \
             train_one_epoch(train_loader, model, device, cls_criterion,
                             optimizer, epoch, writer, cfg, update_train_step)
-
         update_val_step, loss_val, cls_top1_val, cls_top5_val, \
         loc_top1_val, loc_top5_val, loc_gt_known = \
-            val_loc_one_epoch(val_loader, model, device, cls_criterion, epoch, writer, cfg, update_val_step)
+            val_loc_one_epoch(test_loader, model, device, cls_criterion, epoch, writer, cfg, update_val_step)
 
-        if epoch == cfg.SOLVER.NUM_EPOCHS: # save last 
-            torch.save({
-                "epoch": epoch,
-                'state_dict': model.state_dict(),
-                'best_map': best_gtknown
-            }, os.path.join(ckpt_dir, 'model_epoch{}.pth'.format(epoch)))
 
         if loc_top1_val > best_top1_loc:
             best_top1_loc = loc_top1_val
@@ -107,6 +99,13 @@ def main():
 
         print("Best GT_LOC: {}".format(best_gtknown))
         print("Best TOP1_LOC: {}".format(best_gtknown))
+        if epoch == cfg.SOLVER.NUM_EPOCHS: # save last 
+            torch.save({
+                "epoch": epoch,
+                'state_dict': model.state_dict(),
+                'best_map': best_gtknown
+            }, os.path.join(ckpt_dir, 'model_epoch{}.pth'.format(epoch)))
+
         print(datetime.datetime.now().strftime('%Y-%m-%d-%H-%M'))
 
 

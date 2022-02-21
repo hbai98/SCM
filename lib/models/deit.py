@@ -10,38 +10,43 @@ from .graphFusion import Fuse
 from .vision_transformer import VisionTransformer, _cfg
 from timm.models.registry import register_model
 
+from mmcv.cnn import ConvModule
 __all__ = [
     'deit_fcam_tiny_patch16_224', 'deit_fcam_small_patch16_224', 'deit_fcam_base_patch16_224',
     'deit_tscam_tiny_patch16_224', 'deit_tscam_small_patch16_224', 'deit_tscam_base_patch16_224',
-    
+
 ]
 
-def embeddings_to_cosine_similarity_matrix(tokens) :
+
+def embeddings_to_cosine_similarity_matrix(tokens):
     """
     Shapes for inputs:
     - tokens : :math:`(B, N, D)` where B is the batch size, N is the target `spatial` sequence length, D is the token representation length.
-    
+
     Shapes for outputs:
-    
+
     Converts a a tensor of D embeddings to an (N, N) tensor of similarities.
     """
     dot = torch.einsum('bij, bkj -> bik', [tokens, tokens])
-    norm = torch.norm(tokens, p=2, dim=-1) 
+    norm = torch.norm(tokens, p=2, dim=-1)
     x = torch.div(dot, torch.einsum('bi, bj -> bij', norm, norm))
-    
+
     return x
 
+
 class fCAM(VisionTransformer):
-    def __init__(self, num_layers=16, *args, **kwargs):
+    def __init__(self, num_layers=4, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self.head = nn.Linear(self.embed_dim, self.num_classes)
-        self.head = nn.Conv2d(self.embed_dim, self.num_classes, kernel_size=3, stride=1, padding=1)
+        self.head = nn.Conv2d(self.embed_dim, self.num_classes,
+                              kernel_size=3, stride=1, padding=1)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.head.apply(self._init_weights)
         self.num_layers = num_layers
         self.layers = nn.ModuleList()
+        # self.convs = ConvModules(num_layers+1, self.num_classes)
         for i in range(self.num_layers):
-            self.layers.append(Encoder(dim=self.num_classes))                
+            self.layers.append(Encoder(dim=self.num_classes))
 
     def forward_features(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
@@ -49,7 +54,8 @@ class fCAM(VisionTransformer):
         B = x.shape[0]
         x = self.patch_embed(x)
 
-        cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
+        # stole cls_tokens impl from Phil Wang, thanks
+        cls_tokens = self.cls_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
         x = self.pos_drop(x)
@@ -62,39 +68,55 @@ class fCAM(VisionTransformer):
         return x[:, 0], x[:, 1:], attn_weights
 
     def forward(self, x, return_cam=False):
-        x_cls, x_patch, attn_weights = self.forward_features(x)
+        x_cls, x_patch, attn = self.forward_features(x)
         n, p, c = x_patch.shape
-        
+        device = x.device
+
         x_patch = torch.reshape(x_patch, [n, int(p**0.5), int(p**0.5), c])
         x_patch = x_patch.permute([0, 3, 1, 2])
         x_patch = x_patch.contiguous()
         x_patch = self.head(x_patch)
         # x_patch = self.head(rearrange(x_patch, 'B D H W -> B H W D'))
         # x_patch = rearrange(x_patch, 'B H W D -> B D H W')
-        # pred_box = x_patch
-        
-        attn_weights = torch.stack(attn_weights)        # 12 * B * H * N * N
-        attn_weights = torch.mean(attn_weights, dim=2)  # 12 * B * N * N
+        pred_semantic = x_patch
 
-        n, c, h, w = x_patch.shape
-        cams = attn_weights.sum(0)[:, 0, 1:].reshape([n, h, w]).unsqueeze(1)
-        cams = rearrange(cams, 'n 1 h w -> n h w')
-        cams = norm_cam(cams)
-        cams = rearrange(cams, 'n h w -> n (h w)')
-        pred_cam = rearrange(cams, 'B (H W) -> B 1 H W', H=h)
+        attn = torch.stack(attn)        # 12 * B * H * N * N
+        attn = torch.mean(attn, dim=2)  # 12 * B * N * N
+        # res_attn = torch.eye(attn.size(2), device=device)
+        # aug_attn = res_attn + attn 
+        # aug_attn = aug_attn / aug_attn.sum(dim=-1, keepdim=True)
+
+        # # Recursively multiply the weight matrices
+        # joint_attn = aug_attn[0] 
+
+        # for n in range(1, aug_attn.size(0)):
+        #     joint_attn = torch.matmul(aug_attn[n], joint_attn)
         
+        n, c, h, w = x_patch.shape
+        cams = attn.sum(0)[:, 0, 1:].reshape([n, h, w]).unsqueeze(1)
+        # cams = joint_attn # [B (N+1) (N+1)]
+        # cam = cams[:, 0, 1:] # [B N]
+        cam = rearrange(cams, 'B 1 H W -> B (H W)')
+        cam = norm_cam(cam)
+
+        patches = []
+        patches.append(cam)
         for i, layer in enumerate(self.layers):
-            x_patch, cams = layer(x_patch, cams)
-            
+            x_patch, cam = layer(x_patch, cam)
+            patches.append(cam)
         # x_patch = self.head(x_patch)
-        pred_box = x_patch
+        # pred_box = x_patch
         # pred_cam = rearrange(cams, 'B (H W) -> B 1 H W', H=h)
+        # x_patch = self.convs(patches)
         x_logits = self.avgpool(x_patch).squeeze(3).squeeze(2)
+        pred_cam = rearrange(patches[-1], 'B (H W) -> B 1 H W', H=h)
+
         
         if self.training:
             return x_logits
         else:
-            return x_logits, pred_box*pred_cam
+            # get all loss rates
+            return x_logits, pred_semantic*pred_cam
 
 class Encoder(nn.Module):
     def __init__(self,
@@ -109,7 +131,7 @@ class Encoder(nn.Module):
         self.thred = nn.Parameter(torch.ones([1])*thred)
         self.residual = residual
         H, W = fusion_cfg['grid_size']
-        # self.norm = nn.LayerNorm([dim, H, W])
+        # self.norm = nn.LayerNorm((dim, H, W))
 
     def forward(self, x, cam):
         """foward function given x and spt
@@ -121,34 +143,47 @@ class Encoder(nn.Module):
             x (torch.Tensor): patch tokens, tensor of shape [B D H W]
             cam (torch.Tensor): cam values, tensor of shape [B N]
         """
-        sim = embeddings_to_cosine_similarity_matrix(rearrange(x, 'B D H W -> B (H W) D'))
+        sim = embeddings_to_cosine_similarity_matrix(
+            rearrange(x, 'B D H W -> B (H W) D'))
         thred = self.thred.to(x.device)
-        out_cam = einsum('b h w, b w -> b h', self.fuse(sim), cam)
+        out_cam = einsum('b h w, b w -> b h', self.fuse(sim),cam)
         thred = thred * cam.max(1, keepdim=True)[0]
         out_cam = self.shrink(out_cam/thred)
         out_cam = norm_cam(out_cam)
-        out_x = einsum('b d h w, b h w -> b d h w', x, rearrange(out_cam, 'B (H W) -> B H W', H=x.shape[-2]))
+        out_x = einsum('b d h w, b h w -> b d h w', x,
+                       rearrange(out_cam, 'B (H W) -> B H W', H=x.shape[-2]))
         # out_x = self.norm(out_x)
         if self.residual:
             x = x + out_x
             cam = cam + out_cam
         return x, cam
-    
+
+
 def norm_cam(cam):
     # cam [B N]
     if len(cam.shape) == 3:
-        cam = cam - repeat(rearrange(cam, 'B H W -> B (H W)').min(1, keepdim=True)[0], 'B 1 -> B 1 1')
-        cam = cam / repeat(rearrange(cam, 'B H W -> B (H W)').max(1, keepdim=True)[0], 'B 1 -> B 1 1')
+        cam = cam - repeat(rearrange(cam, 'B H W -> B (H W)').min(1,
+                           keepdim=True)[0], 'B 1 -> B 1 1')
+        cam = cam / repeat(rearrange(cam, 'B H W -> B (H W)').max(1,
+                           keepdim=True)[0], 'B 1 -> B 1 1')
     elif len(cam.shape) == 2:
         cam = cam - cam.min(1, keepdim=True)[0]
-        cam = cam / cam.max(1, keepdim=True)[0]       
-        
+        cam = cam / cam.max(1, keepdim=True)[0]
+    elif len(cam.shape) == 4:
+        # min-max norm for each class feature map
+        B, C, H, W = cam.shape
+        cam = rearrange(cam, 'B C H W -> (B C) (H W)')
+        cam -= cam.min(1, keepdim=True)[0]
+        cam /= cam.max(1, keepdim=True)[0]
+        cam = rearrange(cam, '(B C) (H W) -> B C H W', B = B, H=H)
     return cam
+
 
 class TSCAM(VisionTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.head = nn.Conv2d(self.embed_dim, self.num_classes, kernel_size=3, stride=1, padding=1)
+        self.head = nn.Conv2d(self.embed_dim, self.num_classes,
+                              kernel_size=3, stride=1, padding=1)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
 
         self.head.apply(self._init_weights)
@@ -159,7 +194,8 @@ class TSCAM(VisionTransformer):
         B = x.shape[0]
         x = self.patch_embed(x)
 
-        cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
+        # stole cls_tokens impl from Phil Wang, thanks
+        cls_tokens = self.cls_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
         x = self.pos_drop(x)
@@ -183,12 +219,14 @@ class TSCAM(VisionTransformer):
         if self.training:
             return x_logits
         else:
-            attn_weights = torch.stack(attn_weights)        # 12 * B * H * N * N
+            attn_weights = torch.stack(
+                attn_weights)        # 12 * B * H * N * N
             attn_weights = torch.mean(attn_weights, dim=2)  # 12 * B * N * N
 
             feature_map = x_patch.detach().clone()    # B * C * 14 * 14
             n, c, h, w = feature_map.shape
-            cams = attn_weights.sum(0)[:, 0, 1:].reshape([n, h, w]).unsqueeze(1)
+            cams = attn_weights.sum(0)[:, 0, 1:].reshape(
+                [n, h, w]).unsqueeze(1)
             cams = cams * feature_map                           # B * C * 14 * 14
 
             return x_logits, cams
@@ -212,10 +250,12 @@ def deit_tscam_tiny_patch16_224(pretrained=False, **kwargs):
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint[k]
 
-        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
+        pretrained_dict = {k: v for k,
+                           v in checkpoint.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
+
 
 @register_model
 def deit_tscam_small_patch16_224(pretrained=False, **kwargs):
@@ -233,10 +273,12 @@ def deit_tscam_small_patch16_224(pretrained=False, **kwargs):
             if k in checkpoint and checkpoint[k].shape != model_dict[k].shape:
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint[k]
-        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
+        pretrained_dict = {k: v for k,
+                           v in checkpoint.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
+
 
 @register_model
 def deit_tscam_base_patch16_224(pretrained=False, **kwargs):
@@ -254,10 +296,12 @@ def deit_tscam_base_patch16_224(pretrained=False, **kwargs):
             if k in checkpoint and checkpoint[k].shape != model_dict[k].shape:
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint[k]
-        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
+        pretrained_dict = {k: v for k,
+                           v in checkpoint.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
+
 
 @register_model
 def deit_fcam_tiny_patch16_224(pretrained=False, **kwargs):
@@ -277,10 +321,12 @@ def deit_fcam_tiny_patch16_224(pretrained=False, **kwargs):
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint[k]
 
-        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
+        pretrained_dict = {k: v for k,
+                           v in checkpoint.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
+
 
 @register_model
 def deit_fcam_small_patch16_224(pretrained=False, **kwargs):
@@ -298,7 +344,8 @@ def deit_fcam_small_patch16_224(pretrained=False, **kwargs):
             if k in checkpoint and checkpoint[k].shape != model_dict[k].shape:
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint[k]
-        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
+        pretrained_dict = {k: v for k,
+                           v in checkpoint.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
@@ -320,12 +367,8 @@ def deit_fcam_base_patch16_224(pretrained=False, **kwargs):
             if k in checkpoint and checkpoint[k].shape != model_dict[k].shape:
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint[k]
-        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict}
+        pretrained_dict = {k: v for k,
+                           v in checkpoint.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
-
-
-
-
-

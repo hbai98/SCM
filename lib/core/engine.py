@@ -18,19 +18,27 @@ def creat_data_loader(cfg, root_dir):
         train_loader = torch.utils.data.DataLoader(
             CUBDataset(root=root_dir, cfg=cfg, is_train=True),
             batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
-        val_loader = torch.utils.data.DataLoader(
+        test_loader = torch.utils.data.DataLoader(
             CUBDataset(root=root_dir, cfg=cfg, is_train=False),
             batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(
+            CUBDataset(root=root_dir, cfg=cfg, is_train=False, val=True),
+            batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
+
     elif cfg.DATA.DATASET == 'ImageNet':
+        
         train_loader = torch.utils.data.DataLoader(
             ImageNetDataset(root=root_dir, cfg=cfg, is_train=True),
             batch_size=cfg.TRAIN.BATCH_SIZE, shuffle=True, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
-        val_loader = torch.utils.data.DataLoader(
+        test_loader = torch.utils.data.DataLoader(
             ImageNetDataset(root=root_dir, cfg=cfg, is_train=False),
             batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
-
+        val_loader = torch.utils.data.DataLoader(
+            ImageNetDataset(root=root_dir, cfg=cfg, is_train=False, val=True),
+            batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
+                
     print('done!')
-    return train_loader, val_loader
+    return train_loader, test_loader, val_loader
 
 
 def str_gpus(ids):
