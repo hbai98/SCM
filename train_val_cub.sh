@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -J base
-#SBATCH -p p-A100
+#SBATCH -J conv
+#SBATCH -p p-V100
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:2
 #SBATCH --ntasks-per-node=2
@@ -20,5 +20,9 @@ NET_SCALE='small'
 SIZE='224'
 MODEL='fcam'
 export CUDA_VISIBLE_DEVICES=${GPU_ID[@]}
-
+WORK_DIR="/mntnfs/med_data2/haotian/work_dirs/"
+PATH_='ckpt/CUB/pre_GAP/ckpt/model_best.pth'
+# PATH_='ckpt/ImageNet/test_base/ckpt/model_best_epoch_2.pth'
+WORK_DIR=${WORK_DIR}$(echo ${PATH_})
+# --resume ${WORK_DIR}
 python ./tools_cam/train_cam.py --config_file ./configs/CUB/${NET}_${MODEL}_${NET_SCALE}_patch16_${SIZE}.yaml --lr 5e-5 MODEL.CAM_THR 0.1
