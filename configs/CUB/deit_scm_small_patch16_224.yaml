@@ -1,5 +1,5 @@
 BASIC:
-  SAVE_ROOT: '/hpc/users/CONNECT/haotianbai/work_dir/scm/log'
+  SAVE_ROOT: '/hpc/users/CONNECT/haotianbai/work_dir/SCM'
   SEED: 26
   BACKUP_CODES: True
   BACKUP_LIST: ['lib', 'tools_cam', 'configs']

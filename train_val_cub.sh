@@ -22,4 +22,4 @@ WORK_DIR="/hpc/users/CONNECT/haotianbai/work_dir/scm"
 PATH_='/model/resnet/model_best.pth'
 WORK_DIR=${WORK_DIR}$(echo ${PATH_})
 # --resume ${WORK_DIR}
-python ./tools_cam/train_cam.py --config_file ./configs/CUB/SCM_Resnet50.yaml --lr 5e-5 MODEL.CAM_THR 0.1
+python ./tools_cam/train_cam.py --config_file ./configs/CUB/deit_scm_small_patch16_224.yaml --lr 5e-5 

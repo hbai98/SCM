@@ -28,5 +28,5 @@ export CUDA_VISIBLE_DEVICES=${GPU_ID[@]}
 # # PATH_='ckpt/ImageNet/test_base/ckpt/model_best_epoch_2.pth'
 # WORK_DIR=${WORK_DIR}$(echo ${PATH_})
 
-python ./tools_cam/train_cam.py --config_file ./configs/ILSVRC/${NET}_${MODEL}_${NET_SCALE}_patch16_${SIZE}.yaml --lr 1e-6 MODEL.CAM_THR 0.1
+python ./tools_cam/train_cam.py --config_file ./configs/ILSVRC/${NET}_${MODEL}_${NET_SCALE}_patch16_${SIZE}.yaml --lr 1e-6
 # --resume ${WORK_DIR}

@@ -1,0 +1,16 @@
+/hpc/users/CONNECT/haotianbai/.conda/envs/cu113/lib/python3.9/site-packages/apex/pyprof/__init__.py:5: FutureWarning: pyprof will be removed by the end of June, 2022
+  warnings.warn("pyprof will be removed by the end of June, 2022", FutureWarning)
+Traceback (most recent call last):
+  File "/hpc/users/CONNECT/haotianbai/work_dir/SCM/./tools_cam/train_cam.py", line 205, in <module>
+    main()
+  File "/hpc/users/CONNECT/haotianbai/work_dir/SCM/./tools_cam/train_cam.py", line 74, in main
+    prepare_env(cfg)
+  File "/hpc/users/CONNECT/haotianbai/work_dir/SCM/tools_cam/../lib/core/functions.py", line 19, in prepare_env
+    backup_codes(cfg.BASIC.ROOT_DIR, backup_dir, cfg.BASIC.BACKUP_LIST)
+  File "/hpc/users/CONNECT/haotianbai/work_dir/SCM/tools_cam/../lib/utils.py", line 78, in backup_codes
+    shutil.copytree(os.path.join(root_dir, name), os.path.join(res_dir, name))
+  File "/hpc/users/CONNECT/haotianbai/.conda/envs/cu113/lib/python3.9/shutil.py", line 566, in copytree
+    return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
+  File "/hpc/users/CONNECT/haotianbai/.conda/envs/cu113/lib/python3.9/shutil.py", line 522, in _copytree
+    raise Error(errors)
+shutil.Error: [('/hpc/users/CONNECT/haotianbai/work_dir/SCM/./tools_cam/../tools_cam/train_cam.py', '/hpc/users/CONNECT/haotianbai/work_dir/SCM/ckpt/CUB/deit_scm_small_patch16_224_CAM-NORMAL_SEED26_CAM-THR0.1_BS256_2022-07-10-15-59/backup/tools_cam/train_cam.py', "[Errno 11] Resource temporarily unavailable: '/hpc/users/CONNECT/haotianbai/work_dir/SCM/./tools_cam/../tools_cam/train_cam.py' -> '/hpc/users/CONNECT/haotianbai/work_dir/SCM/ckpt/CUB/deit_scm_small_patch16_224_CAM-NORMAL_SEED26_CAM-THR0.1_BS256_2022-07-10-15-59/backup/tools_cam/train_cam.py'")]
