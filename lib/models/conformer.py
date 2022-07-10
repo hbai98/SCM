@@ -13,7 +13,7 @@ from .graphFusion import Fuse
 from einops import rearrange, repeat
 from torch.functional import einsum
 __all__ = [
-    'conformer_fcam_small_patch16',
+    'conformer_scm_small_patch16',
 ]
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -569,7 +569,7 @@ def embeddings_to_cosine_similarity_matrix(tokens) :
 #     return model
 
 @register_model
-def conformer_fcam_small_patch16(pretrained=False, **kwargs):
+def conformer_scm_small_patch16(pretrained=False, **kwargs):
     model = Conformer(patch_size=16, channel_ratio=4, embed_dim=384, depth=12, num_heads=6,
                       mlp_ratio=4, qkv_bias=True, **kwargs)
 

@@ -21,10 +21,10 @@ def creat_data_loader(cfg, root_dir):
         test_loader = torch.utils.data.DataLoader(
             CUBDataset(root=root_dir, cfg=cfg, is_train=False),
             batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
-        val_loader = torch.utils.data.DataLoader(
-            CUBDataset(root=root_dir, cfg=cfg, is_train=False, val=True),
-            batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
-
+        # val_loader = torch.utils.data.DataLoader(
+        #     CUBDataset(root=root_dir, cfg=cfg, is_train=False, val=True),
+        #     batch_size=cfg.TEST.BATCH_SIZE, shuffle=False, num_workers=cfg.BASIC.NUM_WORKERS, pin_memory=True)
+        val_loader = None
     elif cfg.DATA.DATASET == 'ImageNet':
         
         train_loader = torch.utils.data.DataLoader(

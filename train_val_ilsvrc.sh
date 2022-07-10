@@ -19,7 +19,7 @@ GPU_ID=(0,1)
 NET='deit'
 NET_SCALE='small'
 SIZE='224'
-MODEL='fcam'
+MODEL='scm'
 export CUDA_VISIBLE_DEVICES=${GPU_ID[@]}
 
 # WORK_DIR="/mntnfs/med_data2/haotian/work_dirs/"

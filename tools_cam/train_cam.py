@@ -175,7 +175,7 @@ def train_one_epoch(train_loader, model, device, criterion, optimizer, epoch,
             vars.update({key:val for key, val in model.named_parameters()
                     if log_scope.match(key)})
         
-        cls_logits = model(input, return_cam=False)
+        cls_logits = model(input)
         loss = criterion(cls_logits, target)
         
         optimizer.zero_grad()

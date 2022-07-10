@@ -21,7 +21,7 @@ GPU_ID=0
 NET='deit'
 NET_SCALE='small'
 SIZE='224'
-MODEL='fcam'
+MODEL='scm'
 
 # WORK_DIR="/mntnfs/med_data2/haotian/work_dirs/"
 WORK_DIR="/home/baihaotian/programs/TS-CAM/"

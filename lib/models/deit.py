@@ -6,16 +6,17 @@ from functools import partial
 
 from .graphFusion import Fuse
 
-
 from .vision_transformer import VisionTransformer, _cfg
 from timm.models.registry import register_model
 from timm.models import create_model
+from timm.models import ResNet, Bottleneck
+from timm.models.layers.classifier import create_classifier
+import torch.nn.functional as F
 
-from mmcv.cnn import ConvModule
 __all__ = [
-    'deit_fcam_tiny_patch16_224', 'deit_fcam_small_patch16_224', 'deit_fcam_base_patch16_224',
+    'deit_scm_tiny_patch16_224', 'deit_scm_small_patch16_224', 'deit_scm_base_patch16_224',
     'deit_tscam_tiny_patch16_224', 'deit_tscam_small_patch16_224', 'deit_tscam_base_patch16_224',
-    'vit_fcam_small_patch16_224'
+    'vit_scm_small_patch16_224'
 ]
 
 
@@ -34,8 +35,7 @@ def embeddings_to_cosine_similarity_matrix(tokens):
 
     return x
 
-
-class fCAM(VisionTransformer):
+class SCM(VisionTransformer):
     def __init__(self, num_layers=4, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self.head = nn.Linear(self.embed_dim, self.num_classes)
@@ -74,66 +74,41 @@ class fCAM(VisionTransformer):
         x = self.norm(x)
         return x[:, 0], x[:, 1:], attn_weights
 
-    def forward(self, x, return_cam=False):
+    def forward(self, x, test_select=0):
         x_cls, x_patch, attn = self.forward_features(x)
         n, p, c = x_patch.shape
-        device = x.device
 
         x_patch = torch.reshape(x_patch, [n, int(p**0.5), int(p**0.5), c])
         x_patch = x_patch.permute([0, 3, 1, 2])
         x_patch = x_patch.contiguous()
         x_patch = self.head(x_patch)
-        # x_patch = self.head(rearrange(x_patch, 'B D H W -> B H W D'))
-        # x_patch = rearrange(x_patch, 'B H W D -> B D H W')
-        # pred_semantic = x_patch
 
         attn = torch.stack(attn)        # 12 * B * H * N * N
         attn = torch.mean(attn, dim=2)  # 12 * B * N * N
-        # res_attn = torch.eye(attn.size(2), device=device)
-        # aug_attn = res_attn + attn 
-        # aug_attn = aug_attn / aug_attn.sum(dim=-1, keepdim=True)
-
-        # # Recursively multiply the weight matrices
-        # joint_attn = aug_attn[0] 
-
-        # for n in range(1, aug_attn.size(0)):
-        #     joint_attn = torch.matmul(aug_attn[n], joint_attn)
         
         n, c, h, w = x_patch.shape
         cams = attn.sum(0)[:, 0, 1:].reshape([n, h, w]).unsqueeze(1)
-        # cams = joint_attn # [B (N+1) (N+1)]
-        # cam = cams[:, 0, 1:] # [B N]
         cam = rearrange(cams, 'B 1 H W -> B (H W)')
         cam = norm_cam(cam)
-
-        F = []
-        F.append(cam)
-        S = []
-        S.append(x_patch)
-        # x_logits = []
-        for i, layer in enumerate(self.layers):
-            x_patch, cam = layer(x_patch, cam)
-            F.append(cam)
-            S.append(x_patch)
-            # x_logits.append(self.avgpool(x_patch).squeeze(3).squeeze(2))
-        # x_patch = self.head(x_patch)
-        # pred_box = x_patch
-        # pred_cam = rearrange(cams, 'B (H W) -> B 1 H W', H=h)
-        # x_patch = self.convs(patches)
-        
-        # C = S[0].shape[1]
-        pred_cam = rearrange(F[0], 'B (H W) -> B 1 H W', H=h)
-        # pred_cam = repeat(pred_cam, 'B H W -> B C H W', C=C)
-        pred_semantic = S[0]
-        # x_logits = torch.stack(x_logits).mean(dim=0)
-        
+        pred_cam = rearrange(cam, 'B (H W) -> B 1 H W', H=h)
+        pred_semantic = x_patch
         
         if self.training:
+            for i, layer in enumerate(self.layers):
+                x_patch, cam = layer(x_patch, cam)
             x_logits = self.avgpool(x_patch).squeeze(3).squeeze(2)
             return x_logits
         else:
+            # drop SCM 
+            if self.layers is not None:
+                del self.layers 
             x_logits = self.avgpool(pred_semantic).squeeze(3).squeeze(2)
-            return x_logits, pred_cam*pred_semantic
+            predict = pred_cam*pred_semantic
+            if test_select!=0 and test_select>0:
+                topk_ind = torch.topk(x_logits, test_select)[-1]
+                predict = torch.tensor([torch.take(a, idx, axis=0) for (a, idx)  
+                                        in zip(cams, topk_ind)])
+            return x_logits, predict
 
 class Encoder(nn.Module):
     def __init__(self,
@@ -169,7 +144,6 @@ class Encoder(nn.Module):
         out_cam = norm_cam(out_cam)
         out_x = einsum('b d h w, b h w -> b d h w', x,
                        rearrange(out_cam, 'B (H W) -> B H W', H=x.shape[-2]))
-        # out_x = self.norm(out_x)
         if self.residual:
             x = x + out_x
             cam = cam + out_cam
@@ -321,8 +295,8 @@ def deit_tscam_base_patch16_224(pretrained=False, **kwargs):
 
 
 @register_model
-def deit_fcam_tiny_patch16_224(pretrained=False, **kwargs):
-    model = fCAM(
+def deit_scm_tiny_patch16_224(pretrained=False, **kwargs):
+    model = SCM(
         patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     model.default_cfg = _cfg()
@@ -346,8 +320,8 @@ def deit_fcam_tiny_patch16_224(pretrained=False, **kwargs):
 
 
 @register_model
-def deit_fcam_small_patch16_224(pretrained=False, **kwargs):
-    model = fCAM(
+def deit_scm_small_patch16_224(pretrained=False, **kwargs):
+    model = SCM(
         patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     model.default_cfg = _cfg()
@@ -368,8 +342,8 @@ def deit_fcam_small_patch16_224(pretrained=False, **kwargs):
     return model
 
 @register_model
-def vit_fcam_small_patch16_224(pretrained=False, **kwargs):
-    model = fCAM(
+def vit_scm_small_patch16_224(pretrained=False, **kwargs):
+    model = SCM(
         patch_size=16, embed_dim=768, depth=8, num_heads=8, mlp_ratio=3., qkv_bias=True, qk_scale=768 ** -0.5,
         **kwargs)
     model.default_cfg = _cfg()
@@ -393,8 +367,8 @@ def vit_fcam_small_patch16_224(pretrained=False, **kwargs):
     return model
 
 @register_model
-def deit_fcam_base_patch16_224(pretrained=False, **kwargs):
-    model = fCAM(
+def deit_scm_base_patch16_224(pretrained=False, **kwargs):
+    model = SCM(
         patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     model.default_cfg = _cfg()
@@ -413,3 +387,4 @@ def deit_fcam_base_patch16_224(pretrained=False, **kwargs):
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
     return model
+

@@ -1,28 +1,25 @@
-#!/bin/bash
-#SBATCH -J conv
-#SBATCH -p p-V100
-#SBATCH --nodes=1
-#SBATCH --gres=gpu:2
-#SBATCH --ntasks-per-node=2
-#SBATCH --cpus-per-task=6
+#!/bin/sh		
+#BSUB -J Vis_deit
+#BSUB -n 4  
+#BSUB -m g-node02
+#BSUB -q gpu         
+#BSUB -gpgpu 1
+#BSUB -o out.%J      
+#BSUB -e err.%J  
+#BSUB -W 48:00
 
-cd /home/baihaotian/programs/TS-CAM
-source /cm/shared/apps/anaconda3/etc/profile.d/conda.sh
+nvidia-smi
+
+module load anaconda3
+source activate
 conda activate cu113
 
-module load cuda11.2/toolkit/11.2.2
-module load cuda11.2/fft/11.2.2
-module load cuda11.2/blas/11.2.2
-
-GPU_ID=(0,1)
 NET='deit'
 NET_SCALE='small'
 SIZE='224'
-MODEL='fcam'
-export CUDA_VISIBLE_DEVICES=${GPU_ID[@]}
-WORK_DIR="/mntnfs/med_data2/haotian/work_dirs/"
-PATH_='ckpt/CUB/pre_GAP/ckpt/model_best.pth'
-# PATH_='ckpt/ImageNet/test_base/ckpt/model_best_epoch_2.pth'
+MODEL='scm'
+WORK_DIR="/hpc/users/CONNECT/haotianbai/work_dir/scm"
+PATH_='/model/resnet/model_best.pth'
 WORK_DIR=${WORK_DIR}$(echo ${PATH_})
 # --resume ${WORK_DIR}
-python ./tools_cam/train_cam.py --config_file ./configs/CUB/${NET}_${MODEL}_${NET_SCALE}_patch16_${SIZE}.yaml --lr 5e-5 MODEL.CAM_THR 0.1
+python ./tools_cam/train_cam.py --config_file ./configs/CUB/SCM_Resnet50.yaml --lr 5e-5 MODEL.CAM_THR 0.1
