@@ -19,9 +19,13 @@ pytorch
 
 ### Installation
 ```
-conda create -n SCM
+conda env create -f environment.yml
 conda activate SCM
-pip install -r requirements.txt
+```
+To install mmcv-full, please refer to https://mmcv.readthedocs.io/en/latest/get_started/installation.html.
+For instance, cu_version=11.3, torch_vision=1.12
+```
+pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/11.3/1.12/index.html
 ```
 
 ### Inference
@@ -45,7 +49,7 @@ If you find our paper or code useful, please consider cite our paper.
 ```
 @inproceedings{Bai2022SCM,
   title={Weakly Supervised Object Localization via Transformer with Implicit Spatial Calibration},
-  author={Bai, Haotian and Zhang, Ruimao and Wang, Jiong and Xiang, Wan},
+  author={Haotian, Bai and Ruimao, Zhang and Jiong, Wang and Xiang, Wan},
   booktitle={Proceedings of the European conference on computer vision (ECCV)},
   year={2022}
   }

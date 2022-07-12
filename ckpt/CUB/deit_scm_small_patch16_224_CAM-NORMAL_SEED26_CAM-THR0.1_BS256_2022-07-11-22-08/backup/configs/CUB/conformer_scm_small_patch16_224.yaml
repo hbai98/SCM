@@ -3,10 +3,9 @@ BASIC:
   SEED: 26
   BACKUP_CODES: True
   BACKUP_LIST: ['lib', 'tools_cam', 'configs']
-  NUM_WORKERS: 4
 
 MODEL:
-  ARCH: vit_scm_small_patch16_224
+  ARCH: conformer_scm_small_patch16
   CAM_THR: 0.1
   TOP_K: 1
 
@@ -25,10 +24,10 @@ TRAIN:
 TEST:
   BATCH_SIZE: 256
   SAVE_BOXED_IMAGE: False
-
+  
 SOLVER:
   START_LR: 0.001
-  LR_STEPS: [30, ] 
+  LR_STEPS: [30, ]
   NUM_EPOCHS: 30
   LR_FACTOR: 0.1
   MUMENTUM: 0.9

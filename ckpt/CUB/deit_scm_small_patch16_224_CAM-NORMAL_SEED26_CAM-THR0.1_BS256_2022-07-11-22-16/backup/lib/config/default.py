@@ -287,4 +287,4 @@ def update_config():
     if args.opts is not None:
         cfg_from_list(args.opts)
 
-    return arg
+    return args

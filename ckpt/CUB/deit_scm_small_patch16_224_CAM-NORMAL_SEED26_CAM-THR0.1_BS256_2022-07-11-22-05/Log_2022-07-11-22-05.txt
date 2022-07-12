@@ -1,0 +1,44 @@
+{'BASIC': {'BACKUP_CODES': True,
+           'BACKUP_LIST': ['lib', 'tools_cam', 'configs'],
+           'DISP_FREQ': 500,
+           'GPU_ID': [0],
+           'NUM_WORKERS': 4,
+           'ROOT_DIR': '/hpc/users/CONNECT/haotianbai/work_dir/SCM/tools_cam/..',
+           'SAVE_DIR': '/hpc/users/CONNECT/haotianbai/work_dir/SCM/ckpt/CUB/deit_scm_small_patch16_224_CAM-NORMAL_SEED26_CAM-THR0.1_BS256_2022-07-11-22-05',
+           'SAVE_ROOT': '/hpc/users/CONNECT/haotianbai/work_dir/SCM',
+           'SEED': 26,
+           'TIME': '2022-07-11-22-05'},
+ 'CUDNN': {'BENCHMARK': False, 'DETERMINISTIC': True, 'ENABLE': True},
+ 'DATA': {'CROP_SIZE': 224,
+          'DATADIR': '/hpc/users/CONNECT/haotianbai/data/CUB_200_2011',
+          'DATASET': 'CUB',
+          'IMAGE_MEAN': ['0.485', '0.456', '0.406'],
+          'IMAGE_STD': ['0.229', '0.224', '0.225'],
+          'NUM_CLASSES': 200,
+          'RESIZE_SIZE': 256,
+          'SCALE_LENGTH': 15,
+          'SCALE_SIZE': 196},
+ 'MODEL': {'ARCH': 'deit_scm_small_patch16_224',
+           'CAM_THR': 0.1,
+           'LOCALIZER_DIR': '',
+           'TOP_K': 1},
+ 'SOLVER': {'LR_FACTOR': 0.1,
+            'LR_STEPS': ['30'],
+            'MUMENTUM': 0.9,
+            'NUM_EPOCHS': 30,
+            'START_LR': 0.001,
+            'WEIGHT_DECAY': 0.0005},
+ 'TEST': {'BATCH_SIZE': 256,
+          'CKPT_DIR': '',
+          'SAVE_BOXED_IMAGE': False,
+          'SAVE_CAMS': False,
+          'TEN_CROPS': False},
+ 'TRAIN': {'ALPHA': 1.0, 'BATCH_SIZE': 256, 'BETA': 1.0}}
+==> Preparing data...
+done!
+==> Preparing networks for baseline...
+Removing key head.weight from pretrained checkpoint
+Removing key head.bias from pretrained checkpoint
+Preparing networks done!
+Train Epoch: [1][1/24],lr: 0.00005	Loss 5.6481 (5.6481)	Prec@1 0.391 (0.391)	Prec@5 1.953 (1.953)
+Train Epoch: [1][24/24],lr: 0.00005	Loss 4.9886 (5.2441)	Prec@1 6.604 (2.169)	Prec@5 16.981 (7.391)

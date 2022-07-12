@@ -1,0 +1,24 @@
+# run: conda env create -f environment.yml
+name: SCM
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - pip
+  - pip:
+      - opencv-python>=4.4.0
+      - Pillow
+      - pyyaml
+      - tensorboard
+      - timm
+      - matplotlib
+      - scipy
+      - sklearn
+      - einops
+      - mmcls
+  - pytorch
+  - torchvision
+  - cudatoolkit
+  - tqdm
