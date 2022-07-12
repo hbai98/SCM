@@ -20,6 +20,8 @@ This is official implementation of ["Weakly Supervised Object Localization via T
 
 ### Visualization
 ![](./figures/comparison-min.png)
+
+- Note: Image compressed for efficiency. Please refer to our paper for better visualization result.
 ## Usage
 ### Requirements
 ```
