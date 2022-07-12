@@ -10,7 +10,7 @@ This is official implementation of ["Weakly Supervised Object Localization via T
 
 
 ## Architecture Overview
-![](./figures/Arch-min.png) "Architecture"
+![](./figures/Arch-min.png)
 ## Results and Models
 
 | Datasets | Backbone | Top1-Loc Acc | Top5-Loc Acc | GT-Known | Top1-Cls Acc | Top5-Cls Acc | Log | Checkpoints |
@@ -22,8 +22,11 @@ This is official implementation of ["Weakly Supervised Object Localization via T
 ![](./figures/comparison-min.png)
 ## Usage
 ### Requirements
+```
+python==3.9
 pytorch
-
+mmcv
+```
 ### Installation
 ```
 conda env create -f environment.yml
