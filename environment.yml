@@ -17,6 +17,7 @@ dependencies:
       - sklearn
       - einops
       - mmcls
+      - PyYAML
   - pytorch
   - torchvision
   - cudatoolkit

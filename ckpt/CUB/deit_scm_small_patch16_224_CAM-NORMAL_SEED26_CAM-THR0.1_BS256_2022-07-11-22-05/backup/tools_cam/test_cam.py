@@ -139,7 +139,7 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
             input = input.to(device)
             orig = orig.cpu().numpy()
             
-            _, cams = model(input, return_cam=True)
+            _, cams = model(input)
             cams = cams.cpu().tolist()
             gt_labels = gt_labels.cpu().tolist()
             inputs = input.cpu().tolist()

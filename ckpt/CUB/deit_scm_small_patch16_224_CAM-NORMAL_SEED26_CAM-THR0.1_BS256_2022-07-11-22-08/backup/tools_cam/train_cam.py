@@ -181,7 +181,7 @@ def val_loc_one_epoch(val_loader, model, device, criterion,epoch, writer, cfg, u
             target = target.to(device)
             input = input.to(device)
 
-            cls_logits, cams = model(input, return_cam=True)
+            cls_logits, cams = model(input)
             loss = criterion(cls_logits, target)
 
             prec1, prec5 = accuracy(cls_logits.data, target, topk=(1, 5))

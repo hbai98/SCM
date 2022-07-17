@@ -168,7 +168,7 @@ def val_loc_one_epoch(val_loader, model, device):
             target = target.to(device)
             input = input.to(device)
             
-            cls_logits_, cams_ = model(input, return_cam=True)
+            cls_logits_, cams_ = model(input)
             cls_logits_ = cls_logits_.cpu().tolist()
             cams_ = cams_.cpu().tolist()
             target = target.cpu().tolist()
