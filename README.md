@@ -2,6 +2,7 @@
 By Haotian Bai, Ruimao Zhang, Jiong Wang, Xiang Wan
 
 This is official implementation of ["Weakly Supervised Object Localization via Transformer with Implicit Spatial Calibration"](https://github.com/164140757/SCM) in PyTorch.
+Our code is developed based on https://github.com/vasgaowei/TS-CAM. Thanks for your code!
 
 ## Updates
 - [2022-07-10] Initial Commits. Code publically available!
@@ -21,11 +22,6 @@ pytorch
 ```
 conda env create -f environment.yml
 conda activate SCM
-```
-To install mmcv-full, please refer to https://mmcv.readthedocs.io/en/latest/get_started/installation.html.
-For instance, cu_version=11.3, torch_vision=1.12
-```
-pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/11.3/1.12/index.html
 ```
 
 ### Inference

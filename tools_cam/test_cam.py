@@ -13,15 +13,11 @@ from core.functions import prepare_env
 from utils import mkdir, Logger
 from cams_deit import resize_cam, blend_cam, get_bboxes, cal_iou, draw_bbox
 from typing import Dict, List, Optional, Tuple, Union, Sequence
-from mmcls.core.evaluation import precision_recall_f1, support
-from mmcls.models.losses import accuracy
 from typing import Dict, List, Optional, Union, Sequence
 import numpy as np
 import torch
 import cv2
 from numbers import Number
-
-from mmcv.utils import to_2tuple
 
 from tqdm import tqdm
 import torch
@@ -512,7 +508,7 @@ def count(cams,
     
     for j in range(cams.shape[0]): # j -> topk
         scoremap = cams[j]
-        scoremap = resizeNorm(scoremap, to_2tuple(RESHAPE_SIZE))
+        scoremap = resizeNorm(scoremap, (RESHAPE_SIZE, RESHAPE_SIZE))
         # apdated from https://github.com/clovaai/wsolevaluation#prepare-heatmaps-to-evaluate
         boxes_at_thresholds, number_of_box_list = compute_bboxes_from_scoremaps(
             scoremap=scoremap,

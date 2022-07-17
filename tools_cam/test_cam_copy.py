@@ -28,8 +28,6 @@ import cv2
 import ctypes
 from numbers import Number
 
-from mmcv.utils import to_2tuple
-
 from tqdm import tqdm
 import torch
 from models import *
@@ -499,7 +497,7 @@ def process_batch(i,
     cnt_loc = {iou_threshold: np.zeros((max_k, len(cam_threshold_list))) for iou_threshold in iou_threshold_list}
     for j in range(pred.shape[0]):
         scoremap = pred[j]
-        scoremap = resizeNorm(scoremap, to_2tuple(RESHAPE_SIZE))
+        scoremap = resizeNorm(scoremap, (RESHAPE_SIZE, RESHAPE_SIZE))
         # apdated from https://github.com/clovaai/wsolevaluation#prepare-heatmaps-to-evaluate
         boxes_at_thresholds, number_of_box_list = compute_bboxes_from_scoremaps(
             scoremap=scoremap,

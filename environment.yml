@@ -8,9 +8,8 @@ dependencies:
   - numpy
   - pip
   - pip:
-      - opencv-python>=4.4.0
+      - opencv-python
       - Pillow
-      - pyyaml
       - tensorboard
       - timm
       - matplotlib

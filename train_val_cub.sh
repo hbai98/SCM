@@ -1,7 +1,7 @@
 #!/bin/sh		
 #BSUB -J Vis_deit
 #BSUB -n 4  
-#BSUB -m g-node02
+#BSUB -m g-node03
 #BSUB -q gpu         
 #BSUB -gpgpu 1
 #BSUB -o out.%J      
@@ -12,7 +12,7 @@ nvidia-smi
 
 module load anaconda3
 source activate
-conda activate cu113
+conda activate SCM
 
 NET='deit'
 NET_SCALE='small'
