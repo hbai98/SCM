@@ -159,7 +159,7 @@ The logs are organized as
 ```
 where the training result is saved as Log_2022-xx-xx-16-20.txt with logs of validation in val.txt.
 You can also check the parameters update at events.out.tfevents by tensorboard.
-## Core design
+### Core design
 
 The diffusion algorithm is available at
 ```
@@ -167,7 +167,7 @@ lib/models/graphFusion.py
 ```
 which is imported at haotian/SCM/lib/models/deit.py
 
-### Citation
+## Citation
 Please consider citing our article.
 ```
 @inproceedings{Bai2022SCM,
