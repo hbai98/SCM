@@ -118,28 +118,6 @@ metrics = ["maxbox_acc", "GT-Known", "loc_acc", "cls_acc"]
 For details, please refer to [Wsolevaluation](https://github.com/clovaai/wsolevaluation).
 3. metrics denote the measures for evaluation. 
 
-### Drop out SCM
-SCM is automatically dropped out during inference by design. 
-```
-# lib/models/deit.py
-if self.training:
-    for i, layer in enumerate(self.layers):
-        x_patch, cam = layer(x_patch, cam)
-        x_logits = self.avgpool(x_patch).squeeze(3).squeeze(2)
-    return x_logits
-else:
-    # drop SCM 
-    if self.layers is not None:
-        del self.layers 
-    x_logits = self.avgpool(pred_semantic).squeeze(3).squeeze(2)
-    predict = pred_cam*pred_semantic
-    if test_select!=0 and test_select>0:
-        topk_ind = torch.topk(x_logits, test_select)[-1]
-        predict = torch.tensor([torch.take(a, idx, axis=0) for (a, idx) 
-        in zip(cams, topk_ind)])
-    return x_logits, predict
-```
-
 ### Resume Training
 Add the ${pth_file_path} to continue the training if needed.
 ```

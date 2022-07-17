@@ -99,9 +99,6 @@ class SCM(VisionTransformer):
             x_logits = self.avgpool(x_patch).squeeze(3).squeeze(2)
             return x_logits
         else:
-            # drop SCM 
-            if self.layers is not None:
-                del self.layers 
             x_logits = self.avgpool(pred_semantic).squeeze(3).squeeze(2)
             predict = pred_cam*pred_semantic
             if test_select!=0 and test_select>0:
