@@ -164,7 +164,7 @@ The diffusion algorithm is available at
 ```
 lib/models/graphFusion.py
 ```
-which will be imported at haotian/SCM/lib/models/deit.py
+which is imported at haotian/SCM/lib/models/deit.py
 
 ### Citation
 Please consider citing our article.
