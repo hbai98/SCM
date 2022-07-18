@@ -6,7 +6,7 @@ Weakly Supervised Object Localization (WSOL), which aims to localize objects by 
 However, the long-range modeling in Transformer neglects the inherent spatial coherence of the object. Usually, it diffuses the semantic-aware regions far from the object boundary, making localization results significantly larger or far smaller. To address such an issue, we introduce a simple yet effective Spatial Calibration Module (SCM) for accurate WSOL, incorporating semantic similarities of patch tokens and their spatial relationships into a unified diffusion model. Specifically, we introduce a learnable parameter to dynamically adjust the semantic correlations and spatial context intensities for effective information propagation. In practice, SCM is designed as an external module of Transformer, and can be removed during inference to reduce the computation cost. The object-sensitive localization ability is implicitly embedded into the Transformer encoder through optimization in the training phase. 
 In summary, SCM enables the generated attention maps to capture the sharper object boundaries and filter the object-irrelevant background area. Extensive experimental results demonstrate the effectiveness of the proposed method, which significantly outperforms its counterpart TS-CAM on both CUB-200 and ImageNet-1K benchmarks.
 
-This is othe fficial implementation of ["Weakly Supervised Object Localization via Transformer with Implicit Spatial Calibration"](https://github.com/164140757/SCM) in PyTorch.
+This is the official implementation of ["Weakly Supervised Object Localization via Transformer with Implicit Spatial Calibration"](https://github.com/164140757/SCM) in PyTorch.
 Our code is developed based on [TS-CAM](https://github.com/vasgaowei/TS-CAM) and [Wsolevaluation](https://github.com/clovaai/wsolevaluation). Thanks for your code!
 
 ![](./figures/Intro-min.png)
@@ -27,7 +27,7 @@ Our code is developed based on [TS-CAM](https://github.com/vasgaowei/TS-CAM) and
 ### Visualization
 ![](./figures/comparison-min.png)
 
-- Note: The image is compressed for efficiency. Please refer to our paper for better visualization rresults
+- Note: The image is compressed for efficiency. Please refer to our paper for better visualization results
 ## Usage
 
 ### Installation
@@ -143,7 +143,7 @@ The diffusion algorithm is available at
 ```
 lib/models/graphFusion.py
 ```
-which is imported at haotian/SCM/lib/models/deit.py
+which is imported at lib/models/deit.py
 
 ## Citation
 Please consider citing our article.
