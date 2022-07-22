@@ -90,6 +90,10 @@ python tools_cam/train_cam.py --config_file ./configs/CUB/deit_scm_small_patch16
 python tools_cam/train_cam.py --config_file ./configs/ILSVRC/deit_scm_small_patch16_224.yaml --lr 1e-6
 ```
 Since only CUBV2 dataset is available for [MaxboxAcc](https://github.com/clovaai/wsolevaluation).
+Please prepare the dataset CUBV2 at the root directory of CUB_200_2011 if you want to test it.
+```
+CUB_200_2011/CUBV2
+```
 We provide the default False option at tools_cam/train_cam.py
 ```
 CUBV2=False

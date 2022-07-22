@@ -77,7 +77,7 @@ def main():
     pprint.pprint(cfg)
     writer = SummaryWriter(log_dir)
 
-    train_loader, test_loader, val_loader = creat_data_loader(cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
+    train_loader, test_loader, val_loader = creat_`data_loader(cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
     device, model, optimizer, cls_criterion = creat_model(cfg, args)
 
     best_gtknown = 0
