@@ -9,11 +9,13 @@ In summary, SCM enables the generated attention maps to capture the sharper obje
 This is the official implementation of ["Weakly Supervised Object Localization via Transformer with Implicit Spatial Calibration"](https://github.com/164140757/SCM) in PyTorch.
 Our code is developed based on [TS-CAM](https://github.com/vasgaowei/TS-CAM) and [Wsolevaluation](https://github.com/clovaai/wsolevaluation). Thanks for your code!
 
+For details, please refer to Link:[Arxiv](http://arxiv.org/abs/2207.10447)
+
 ![](./figures/Intro-min.png)
 
 ## Updates
 - [2022-07-17] Initial Commits. Code publically available!
-
+- [2022-07-22] The Arxiv version is available! 
 
 ## Architecture Overview
 ![](./figures/Arch-min.png)
