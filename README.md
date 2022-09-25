@@ -11,14 +11,16 @@ Our code is developed based on [TS-CAM](https://github.com/vasgaowei/TS-CAM) and
 
 For details, please refer to Link:[Arxiv](http://arxiv.org/abs/2207.10447)
 
-![](./figures/Intro-min.png)
+## Overview
+![](./figures/ECCV-2022_poster.png)
 
 ## Updates
 - [2022-07-17] Initial Commits. Code publically available!
 - [2022-07-22] The Arxiv version is available! 
+- [2022-09-25] ECCV 2022 poster is available!
 
-## Architecture Overview
-![](./figures/Arch-min.png)
+
+<!-- ![](./figures/Arch-min.png) -->
 ## Results and Models
 
 | Datasets | Backbone | Top1-Loc Acc | Top5-Loc Acc | GT-Known | Top1-Cls Acc | Top5-Cls Acc | Checkpoints & logs|
