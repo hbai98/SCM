@@ -28,10 +28,10 @@ For details, please refer to Link:[Arxiv](http://arxiv.org/abs/2207.10447)
 | CUB | Deit-S | 76.4 | 91.6 | 96.6 | 78.5 | 94.5 | [Google Drive](https://drive.google.com/drive/folders/1-FranLy5KSttCPK98ZY27TMXuriE9jkj?usp=sharing) 
 | ILSVRC | Deit-S | 56.1 | 66.4 | 68.8 | 76.7 | 93.0 | [Google Drive](https://drive.google.com/drive/folders/1-HZBXo_AoK6W5gwRVh4LD8oyGDYrEc8z?usp=sharing) 
 
-### Visualization
-![](./figures/comparison-min.png)
+<!-- ### Visualization
+![](./figures/comparison-min.png) -->
 
-- Note: The image is compressed for efficiency. Please refer to our paper for better visualization results
+<!-- - Note: The image is compressed for efficiency. Please refer to our paper for better visualization results -->
 ## Usage
 
 ### Installation
