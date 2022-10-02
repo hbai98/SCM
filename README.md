@@ -2,14 +2,14 @@
 By Haotian Bai, Ruimao Zhang, Jiong Wang, Xiang Wan
 
 ## Introduction
-Weakly Supervised Object Localization (WSOL), which aims to localize objects by only image-level labels, has attracted much attention because of its low annotation cost in actual application.Recent studies leverage the advantage of self-attention in visual Transformer for long-range dependency to re-active semantic regions, aiming to avoid partial activation in traditional class activation mapping (CAM).
+[ECCV 2022] Weakly Supervised Object Localization (WSOL), which aims to localize objects by only image-level labels, has attracted much attention because of its low annotation cost in actual application.Recent studies leverage the advantage of self-attention in visual Transformer for long-range dependency to re-active semantic regions, aiming to avoid partial activation in traditional class activation mapping (CAM).
 However, the long-range modeling in Transformer neglects the inherent spatial coherence of the object. Usually, it diffuses the semantic-aware regions far from the object boundary, making localization results significantly larger or far smaller. To address such an issue, we introduce a simple yet effective Spatial Calibration Module (SCM) for accurate WSOL, incorporating semantic similarities of patch tokens and their spatial relationships into a unified diffusion model. Specifically, we introduce a learnable parameter to dynamically adjust the semantic correlations and spatial context intensities for effective information propagation. In practice, SCM is designed as an external module of Transformer, and can be removed during inference to reduce the computation cost. The object-sensitive localization ability is implicitly embedded into the Transformer encoder through optimization in the training phase. 
 In summary, SCM enables the generated attention maps to capture the sharper object boundaries and filter the object-irrelevant background area. Extensive experimental results demonstrate the effectiveness of the proposed method, which significantly outperforms its counterpart TS-CAM on both CUB-200 and ImageNet-1K benchmarks.
 
 This is the official implementation of ["Weakly Supervised Object Localization via Transformer with Implicit Spatial Calibration"](https://github.com/164140757/SCM) in PyTorch.
 Our code is developed based on [TS-CAM](https://github.com/vasgaowei/TS-CAM) and [Wsolevaluation](https://github.com/clovaai/wsolevaluation). Thanks for your code!
 
-For details, please refer to Link:[Arxiv](http://arxiv.org/abs/2207.10447)
+For details, please refer to Link:[Arxiv](http://arxiv.org/abs/2207.10447), or the video in [Youtube](https://www.youtube.com/watch?v=zQdUudmTPOQ). 
 
 ## Overview
 ![](./figures/ECCV-2022_poster.png)
@@ -18,6 +18,7 @@ For details, please refer to Link:[Arxiv](http://arxiv.org/abs/2207.10447)
 - [2022-07-17] Initial Commits. Code publically available!
 - [2022-07-22] The Arxiv version is available! 
 - [2022-09-25] ECCV 2022 poster is available!
+- [2022-10-02] ECCV video presentation is available!
 
 
 <!-- ![](./figures/Arch-min.png) -->
