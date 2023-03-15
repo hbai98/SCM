@@ -101,11 +101,13 @@ class SCM(VisionTransformer):
         else:
             x_logits = self.avgpool(pred_semantic).squeeze(3).squeeze(2)
             predict = pred_cam*pred_semantic
-            if test_select!=0 and test_select>0:
+            if test_select>0:
                 topk_ind = torch.topk(x_logits, test_select)[-1]
                 predict = torch.tensor([torch.take(a, idx, axis=0) for (a, idx)  
-                                        in zip(cams, topk_ind)])
-            return x_logits, predict
+                                        in zip(predict, topk_ind)])
+                pred_semantic = torch.tensor([torch.take(a, idx, axis=0) for (a, idx)  
+                                        in zip(pred_semantic, topk_ind)])
+            return x_logits, predict, pred_cam, pred_semantic
 
 class Encoder(nn.Module):
     def __init__(self,

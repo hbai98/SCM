@@ -99,13 +99,13 @@ def main():
         cfg, os.path.join(cfg.BASIC.ROOT_DIR, cfg.DATA.DATADIR))
     device, model, cls_criterion = creat_model(cfg, args)
     
-    # if VALIDATE_SET:
-    #     num_imgs = len(val_loader)
-    #     eval_results = val_loc_one_epoch(
-    #         val_loader, model, device)
-    #     opt_thred = eval_results['det_optThred_thr_50.00_top-1']
-    # else:
-    #     opt_thred = OPT_THRED
+    if VALIDATE_SET:
+        num_imgs = len(val_loader)
+        eval_results = val_loc_one_epoch(
+            val_loader, model, device)
+        opt_thred = eval_results['det_optThred_thr_50.00_top-1']
+    else:
+        opt_thred = OPT_THRED
 
     eval_results = val_loc_one_epoch(test_loader, model, device)
     with open(os.path.join(cfg.BASIC.SAVE_DIR, 'test.txt'), 'w') as val_file:
@@ -119,7 +119,8 @@ def main():
             raise ValueError(f'Unsupport metric type: {type(v)}')
         print(f'\n{k} : {v}')
     if DRAW:
-        opt_thred = eval_results['det_optThred_thr_50.00_top-1']
+        # opt_thred = eval_results['det_optThred_thr_50.00_top-1']
+        opt_thred = 0.35
         print(f"DRAWING IMAGES AT OPTIMAL THRESHOLD {opt_thred}...")
         # draw_bboxes_images(test_loader, model, opt_thred, device, cfg)
         draw_bboxes_images(test_loader, model, opt_thred, device, cfg)
@@ -135,8 +136,10 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
             input = input.to(device)
             orig = orig.cpu().numpy()
             
-            _, cams = model(input)
+            _, cams, pred_attn, pred_sem = model(input)
             cams = cams.cpu().tolist()
+            pred_attn = pred_attn.cpu().tolist()
+            pred_sem = pred_sem.cpu().tolist()
             gt_labels = gt_labels.cpu().tolist()
             inputs = input.cpu().tolist()
             gt_bboxes = [bbox[b].strip().split(' ') for b in range(len(cams))]
@@ -144,6 +147,9 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
                        for b in gt_bboxes]            
             gt_labels = np.array(gt_labels)
             cams = np.array(cams)  
+            pred_sems = np.array(pred_sem)  
+            pred_attns = np.array(pred_attn)  
+            
                       
             for i in range(len(inputs)):
                 img = np.array(orig[i])
@@ -160,6 +166,8 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
                 img = img[:, :, [2, 1, 0]]
 
                 cam = cams[i]
+                pred_sem = pred_sems[i]
+                pred_attn = pred_attns[i]
                 gt_label = gt_labels[i]
                 gt_bbox = gt_bboxes[i]
                 
@@ -168,6 +176,8 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
                 
                 image_name = image_names[i]
                 cam = cam[gt_label, :, :]
+                pred_sem = pred_sem[gt_label, :, :]
+                pred_attn = pred_attn.squeeze()
                 scoremap = resize_cam(cam, size=(
                     cfg.DATA.CROP_SIZE, cfg.DATA.CROP_SIZE))
                 boxes_at_thresholds, number_of_box_list = compute_bboxes_from_scoremaps(
@@ -206,7 +216,19 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
                 roi_image = draw_bbox(blend, iou, np.array(
                     gt_bbox).reshape(-1, 4).astype(np.int32), boxes_at_thresholds, draw_box=False, draw_txt=False)
                 
-                
+                scoremap = resize_cam(pred_sem, size=(
+                    cfg.DATA.CROP_SIZE, cfg.DATA.CROP_SIZE))
+                blend, heatmap = blend_cam(img, scoremap, bbox)
+                sem_image = draw_bbox(blend, iou, np.array(
+                    gt_bbox).reshape(-1, 4).astype(np.int32), boxes_at_thresholds, draw_box=False, draw_txt=False)
+                                
+                scoremap = resize_cam(pred_attn, size=(
+                    cfg.DATA.CROP_SIZE, cfg.DATA.CROP_SIZE))
+                blend, heatmap = blend_cam(img, scoremap, bbox)
+                attn_image = draw_bbox(blend, iou, np.array(
+                    gt_bbox).reshape(-1, 4).astype(np.int32), boxes_at_thresholds, draw_box=False, draw_txt=False)
+                                
+                                                
                 save_dir = os.path.join(
                     cfg.BASIC.SAVE_DIR, 'boxed_image', image_name.split('/')[0])
                 save_path = os.path.join(
@@ -222,7 +244,22 @@ def draw_bboxes_images(dataloader, model, opt_thred, device, cfg):
                     cfg.BASIC.SAVE_DIR, 'roi_images', image_name)
                 mkdir(save_dir)
                 cv2.imwrite(save_path, roi_image)
+
+                save_dir = os.path.join(
+                    cfg.BASIC.SAVE_DIR, 'sem_images', image_name.split('/')[0])
+                save_path = os.path.join(
+                    cfg.BASIC.SAVE_DIR, 'sem_images', image_name)
+                mkdir(save_dir)
+                cv2.imwrite(save_path, sem_image)
                 
+                
+                save_dir = os.path.join(
+                    cfg.BASIC.SAVE_DIR, 'attn_images', image_name.split('/')[0])
+                save_path = os.path.join(
+                    cfg.BASIC.SAVE_DIR, 'attn_images', image_name)
+                mkdir(save_dir)
+                cv2.imwrite(save_path, attn_image)
+                                                
                 save_dir = os.path.join(
                     cfg.BASIC.SAVE_DIR, 'binary', image_name.split('/')[0])
                 save_path = os.path.join(
@@ -251,7 +288,7 @@ def val_loc_one_epoch(val_loader, model, device, opt_thred=-1):
             gt_labels = gt_labels.to(device)
             input = input.to(device)
 
-            cls_scores, cams = model(input)
+            cls_scores, cams, _, _ = model(input)
             cls_scores = cls_scores.cpu().tolist()
             cams = cams.cpu().tolist()
             gt_labels = gt_labels.cpu().tolist()

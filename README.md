@@ -127,6 +127,22 @@ metrics = ["maxbox_acc", "GT-Known", "loc_acc", "cls_acc"]
 For details, please refer to [Wsolevaluation](https://github.com/clovaai/wsolevaluation).
 3. metrics denote the measures for evaluation. 
 
+If DRAW=TRUE, the resulting folder contains:
+```
+.
+├── attn_images
+├── backup
+├── binary
+├── boxed_image
+├── ckpt
+├── log
+├── Log_xx.txt
+├── roi_images
+└── sem_images
+```
+where attn_images refers to the attention map $\boldsymbol{F}^0$, sem_images refers to $\boldsymbol{S}^0$,  and roi_images refers to the predicted scores $\boldsymbol{F}^0\odot \boldsymbol{S}^0$ used for bounding box prediction. 
+
+The roi_images, binary folders, and boxed_image correspond to the our viusal results displayed in the main paper. 
 ### Resume Training
 Add the ${pth_file_path} to continue the training if needed.
 ```
@@ -146,6 +162,7 @@ The logs are organized as
 ```
 where the training result is saved as Log_2022-xx-xx-16-20.txt with logs of validation in val.txt.
 You can also check the parameters update at events.out.tfevents by tensorboard.
+
 ### Core design
 
 The diffusion algorithm is available at
